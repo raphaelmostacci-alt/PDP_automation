@@ -1,0 +1,41 @@
+dans vscode
+
+programme avec des modularités
+
+makefiles
+
+code : int main 
+
+ouvrir un CSV rapport PDP
+
+faire une fonctionne comptage du nombre de fichier à analyser (pour pouvoir arreter la boucle while)
+
+while {
+
+ouvrir les ficheirs
+
+pointage URL
+
+Faire les requetes avec les IF qui dependent du format du fichier à ouvrir et lire (integrer les regles de non-conformité)
+-pdf
+-txt
+-jpeg
+-etc..
+
+
+alimenter le fichierCSV qui sera trier par rapport au chemin d'ouverture du fichier dans lequel il y aura un rapport sur l'etat des ichiers (non corforme ou conforme) 
+
+Fermer le fichier qui etait ouvert a ce moement la dans le while avec l'option de sauvegarde pour eviter decraser le prochain fichier
+
+
+apres la boucle While
+
+fermer le fichier csv et sauvegarder le fichier dans un endroit precis
+
+
+
+terminal de commande de vscode
+retrouver la commande spcéciale pour excecuter le makefiles avec les éléments exterieure
+
+
+

@@ -1,0 +1,22 @@
+# ==========================================
+# AUTOMATISATION PDP - Dépendances Python
+# ==========================================
+
+# Traitement PDF
+PyPDF2==3.0.1
+pdfplumber==0.10.3
+pdf2image==1.17.0
+
+# OCR (Reconnaissance optique de caractères)
+pytesseract==0.3.10
+Pillow==10.1.0
+
+# Automation Web (Selenium pour ChatGPT)
+selenium==4.15.2
+webdriver-manager==4.0.1
+
+# Génération Excel
+openpyxl==3.1.2
+
+# Utilitaires
+python-dotenv==1.0.0

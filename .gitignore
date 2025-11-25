@@ -1,0 +1,46 @@
+# Fichiers et dossiers à ignorer
+
+# Environnement virtuel Python
+venv/
+env/
+ENV/
+.venv
+
+# Fichiers Python compilés
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / Packaging
+build/
+dist/
+*.egg-info/
+
+# Données sensibles
+data/input/**
+!data/input/.gitkeep
+data/output/*.xlsx
+data/output/*.log
+
+# Configuration locale
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Selenium
+*.log
+geckodriver.log
+
+# Tesseract
+*.traineddata
