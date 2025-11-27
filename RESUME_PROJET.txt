@@ -1,0 +1,342 @@
+================================================================================
+📊 RÉSUMÉ COMPLET DU PROJET PDP_automation
+================================================================================
+Date : 27 Novembre 2025
+Auteur : GitHub Copilot (Assistant IA)
+
+================================================================================
+🎯 OBJECTIF PRINCIPAL
+================================================================================
+
+Automatiser la vérification de conformité des documents obligatoires pour les 
+entreprises extérieures intervenant dans le laboratoire.
+
+Documents concernés :
+  • CNI (Carte Nationale d'Identité) - validité 10-15 ans
+  • Habilitations Électriques - validité 3 ans
+  • FDS (Fiches de Données de Sécurité) - année >= 2021
+  • Aptitudes Frigorifiques - valides à vie
+
+================================================================================
+🏗️ ARCHITECTURE TECHNIQUE
+================================================================================
+
+Langage : C (ANSI C99)
+Compilation : gcc avec makefile
+Port : 443 (HTTPS par défaut)
+
+Bibliothèques requises :
+  • libcurl - Requêtes HTTPS vers API ChatGPT
+  • cJSON - Parsing des réponses JSON
+  • Standard C - stdio.h, stdlib.h, string.h, dirent.h, time.h
+
+================================================================================
+📋 WORKFLOW GÉNÉRAL
+================================================================================
+
+1. ENTRÉE
+   └─> Dossier contenant les documents (PDF, JPG, PNG, TIF)
+
+2. SCANNER
+   └─> Lister tous les fichiers du dossier
+   └─> Compter le nombre total de fichiers
+   └─> Filtrer par extension (.pdf, .jpg, .png, .tif)
+
+3. BOUCLE D'ANALYSE
+   while (fichiers non traités) {
+       ├─> Ouvrir le fichier courant
+       ├─> Envoyer à l'API ChatGPT (HTTPS:443)
+       │   └─> URL : https://chat.st.com
+       ├─> Recevoir réponse JSON de l'IA
+       ├─> Parser le JSON (extraire infos)
+       ├─> Appliquer règles de validation
+       ├─> Écrire résultat dans CSV
+       └─> Fermer le fichier et passer au suivant
+   }
+
+4. SORTIE
+   └─> Fichier CSV : rapport_pdp_YYYYMMDD.csv
+   └─> Sauvegarde dans data/output/
+   └─> Affichage statistiques en console
+
+================================================================================
+🗂️ STRUCTURE MODULAIRE DU PROJET
+================================================================================
+
+PDP_automation/
+├── main.c                    # Fonction main(), orchestration générale
+├── document_scanner.c/h      # Scanner de dossier, comptage fichiers
+├── chatgpt_client.c/h        # Communication API ChatGPT (libcurl, HTTPS:443)
+├── json_parser.c/h           # Parser les réponses JSON de l'IA
+├── validator.c/h             # Règles de validation métier
+├── excel_generator.c/h       # Génération du rapport CSV
+├── config.h                  # Constantes (URL API, règles de validité)
+├── makefile                  # Compilation avec gcc
+├── data/
+│   ├── input/                # Documents à analyser
+│   └── output/               # Rapports CSV générés
+└── README.md                 # Documentation du projet
+
+================================================================================
+📊 STRUCTURES DE DONNÉES
+================================================================================
+
+typedef struct {
+    char entreprise[100];
+    char nom[50];
+    char prenom[50];
+    char type_document[30];      // CNI, HABILITATION, FDS, APTITUDE_FRIGO
+    char chemin_fichier[256];
+    char date_validite[20];
+    char statut[20];             // "CONFORME" ou "NON_CONFORME"
+    char commentaire[200];
+} Document;
+
+typedef struct {
+    int total_fichiers;
+    int fichiers_conformes;
+    int fichiers_non_conformes;
+    int fichiers_erreur;
+} Statistiques;
+
+================================================================================
+🤖 PROMPTS POUR L'IA (LOIS D'EXTRACTION)
+================================================================================
+
+Ces prompts seront envoyés à l'API ChatGPT pour analyser chaque document.
+
+1. PROMPT POUR CNI :
+   "Analyse cette Carte Nationale d'Identité. Extrait les informations 
+    suivantes au format JSON :
+    - nom (string)
+    - prenom (string)
+    - date_naissance (format: YYYY-MM-DD)
+    - date_emission (format: YYYY-MM-DD)
+    - date_expiration (format: YYYY-MM-DD)
+    Si une information n'est pas lisible, retourne 'ILLISIBLE'."
+
+2. PROMPT POUR HABILITATIONS ÉLECTRIQUES :
+   "Analyse cette Habilitation Électrique. Extrait les informations 
+    suivantes au format JSON :
+    - nom (string)
+    - prenom (string)
+    - entreprise (string)
+    - type_habilitation (string, ex: B0, B1, B2, etc.)
+    - date_emission (format: YYYY-MM-DD)
+    - date_expiration (format: YYYY-MM-DD)
+    Si une information n'est pas lisible, retourne 'ILLISIBLE'."
+
+3. PROMPT POUR FDS (FICHES DE DONNÉES DE SÉCURITÉ) :
+   "Analyse cette Fiche de Données de Sécurité. Extrait les informations 
+    suivantes au format JSON :
+    - nom_produit (string)
+    - entreprise (string)
+    - annee_edition (integer, YYYY)
+    - date_revision (format: YYYY-MM-DD)
+    Si une information n'est pas lisible, retourne 'ILLISIBLE'."
+
+4. PROMPT POUR APTITUDES FRIGORIFIQUES :
+   "Analyse cette Aptitude Frigorifique. Extrait les informations 
+    suivantes au format JSON :
+    - nom (string)
+    - prenom (string)
+    - entreprise (string)
+    - numero_certificat (string)
+    - date_obtention (format: YYYY-MM-DD)
+    Si une information n'est pas lisible, retourne 'ILLISIBLE'."
+
+================================================================================
+✅ RÈGLES DE VALIDATION
+================================================================================
+
+1. CNI (Carte Nationale d'Identité)
+   Règle : Date d'émission < 10 ans (adultes) ou < 15 ans (mineurs)
+   Calcul : date_actuelle - date_emission <= durée_validité
+   Statut : CONFORME / NON_CONFORME / EXPIRÉ
+
+2. Habilitations Électriques
+   Règle : Date d'émission < 3 ans
+   Calcul : date_actuelle - date_emission <= 3 ans
+   Statut : CONFORME / NON_CONFORME / EXPIRÉ
+
+3. FDS (Fiches de Données de Sécurité)
+   Règle : Année d'édition >= 2021
+   Calcul : annee_edition >= 2021
+   Statut : CONFORME / NON_CONFORME / OBSOLÈTE
+
+4. Aptitudes Frigorifiques
+   Règle : Valide à vie (aucune date d'expiration)
+   Vérification : Document existe et contient les informations requises
+   Statut : CONFORME / NON_CONFORME
+
+================================================================================
+📡 COMMUNICATION AVEC L'API CHATGPT
+================================================================================
+
+URL API : https://chat.st.com
+Port : 443 (HTTPS par défaut)
+Méthode : POST
+
+Headers requis :
+  Content-Type: application/json
+  Authorization: Bearer <TOKEN_API>
+
+Corps de la requête (JSON) :
+{
+  "model": "gpt-4",
+  "messages": [
+    {
+      "role": "system",
+      "content": "Tu es un assistant d'extraction de données de documents."
+    },
+    {
+      "role": "user",
+      "content": "<PROMPT_SPÉCIFIQUE> + <CONTENU_DOCUMENT_BASE64>"
+    }
+  ],
+  "temperature": 0.2,
+  "max_tokens": 500
+}
+
+Réponse attendue (JSON) :
+{
+  "choices": [
+    {
+      "message": {
+        "content": "{\"nom\":\"Dupont\",\"prenom\":\"Jean\",...}"
+      }
+    }
+  ]
+}
+
+================================================================================
+📝 FORMAT DU FICHIER CSV DE SORTIE
+================================================================================
+
+En-tête :
+Entreprise,Nom,Prenom,Type_Document,Chemin_Fichier,Date_Validite,Statut,Commentaire
+
+Exemple de lignes :
+ACME Corp,Dupont,Jean,CNI,data/input/cni_dupont.pdf,2025-12-31,CONFORME,
+TechnoServices,Martin,Sophie,HABILITATION,data/input/hab_martin.pdf,2023-05-15,NON_CONFORME,Expiré depuis 2 ans
+ChemLab,Durand,Pierre,FDS,data/input/fds_produit.pdf,2022,CONFORME,
+ElectroPro,Bernard,Marie,APTITUDE_FRIGO,data/input/apt_bernard.pdf,N/A,CONFORME,Valide à vie
+
+================================================================================
+🔧 MAKEFILE (COMPILATION)
+================================================================================
+
+CC = gcc
+CFLAGS = -Wall -Wextra -std=c99 -g
+LIBS = -lcurl -lcjson
+
+SRCS = main.c document_scanner.c chatgpt_client.c json_parser.c validator.c excel_generator.c
+OBJS = $(SRCS:.c=.o)
+TARGET = pdp_automation
+
+all: $(TARGET)
+
+$(TARGET): $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+clean:
+	rm -f $(OBJS) $(TARGET)
+
+run:
+	./$(TARGET)
+
+.PHONY: all clean run
+
+================================================================================
+🚀 COMMANDES POUR EXÉCUTER LE PROJET
+================================================================================
+
+1. Compiler le projet :
+   $ make
+
+2. Exécuter le programme :
+   $ make run
+   OU
+   $ ./pdp_automation
+
+3. Nettoyer les fichiers compilés :
+   $ make clean
+
+4. Recompiler depuis zéro :
+   $ make clean && make
+
+================================================================================
+⚠️ GESTION DES ERREURS
+================================================================================
+
+Le programme doit gérer les erreurs suivantes :
+
+1. Erreurs de fichiers :
+   - Fichier introuvable
+   - Fichier corrompu
+   - Permissions insuffisantes
+   → Action : Logger l'erreur dans CSV avec statut "ERREUR"
+
+2. Erreurs réseau :
+   - API inaccessible
+   - Timeout de connexion
+   - Réponse HTTP != 200
+   → Action : Réessayer 3 fois, puis logger l'erreur
+
+3. Erreurs de parsing JSON :
+   - JSON malformé
+   - Champs manquants
+   → Action : Logger l'erreur avec statut "ERREUR_PARSING"
+
+4. Erreurs mémoire :
+   - malloc() échoue
+   - Dépassement de buffer
+   → Action : Afficher erreur et arrêter le programme
+
+================================================================================
+📈 STATISTIQUES AFFICHÉES EN FIN D'EXÉCUTION
+================================================================================
+
+Exemple de sortie console :
+
+╔═══════════════════════════════════════════════════╗
+║      RAPPORT PDP AUTOMATION - 27/11/2025         ║
+╠═══════════════════════════════════════════════════╣
+║ Total de fichiers traités      : 45              ║
+║ Documents CONFORMES             : 38              ║
+║ Documents NON CONFORMES         : 5               ║
+║ Erreurs de traitement           : 2               ║
+╠═══════════════════════════════════════════════════╣
+║ Taux de conformité              : 84.4%           ║
+║ Temps d'exécution               : 2m 34s          ║
+║ Fichier généré                  : rapport_pdp_20251127.csv
+╚═══════════════════════════════════════════════════╝
+
+================================================================================
+✨ PROCHAINES ÉTAPES
+================================================================================
+
+1. Créer l'architecture complète du projet avec tous les fichiers
+2. Implémenter chaque module individuellement
+3. Définir précisément les prompts pour l'IA ChatGPT
+4. Tester avec des documents réels
+5. Optimiser les performances (multithreading si nécessaire)
+6. Ajouter une interface CLI pour paramétrer l'exécution
+
+================================================================================
+📌 NOTES IMPORTANTES
+================================================================================
+
+• Le port 443 sera utilisé par défaut pour toutes les connexions HTTPS
+• L'URL de l'API ChatGPT de ST est : https://chat.st.com
+• Les prompts IA doivent être précis et structurés (agissent comme des "lois")
+• Le programme doit être robuste et continuer même en cas d'erreur sur un fichier
+• La modularité est essentielle pour la maintenance future
+• Utiliser malloc()/free() proprement pour éviter les fuites mémoire
+
+================================================================================
+FIN DU DOCUMENT
+================================================================================

@@ -1,0 +1,143 @@
+📋 Contexte du Projet PDP_automation (Version C + IA uniquement)
+
+Objectif Principal :
+Créer un système automatisé en langage C pour vérifier la conformité des documents obligatoires 
+des entreprises extérieures intervenant dans un laboratoire, en utilisant uniquement une IA (ChatGPT) 
+pour l'analyse des documents (pas d'OCR traditionnel).
+
+================================================================================
+Documents à Analyser :
+================================================================================
+1. CNI (Carte Nationale d'Identité) - validité 10-15 ans
+2. Habilitations Électriques - validité 3 ans
+3. FDS (Fiches de Données de Sécurité) - doivent être >= 2021
+4. Aptitudes Frigorifiques - valides à vie
+
+================================================================================
+Workflow Technique Demandé :
+================================================================================
+
+ENTRÉE :
+- Dossier contenant tous les documents (PDF, JPG, PNG, TIF)
+- Tous les documents seront analysés par l'IA
+
+PROCESSUS :
+
+1. Scanner le dossier d'entrée (fonctions C)
+   - Utiliser opendir(), readdir() pour lister les fichiers
+   - Compter le nombre total de fichiers à analyser
+   - Filtrer par extension (.pdf, .jpg, .png, .tif)
+
+2. Boucle d'analyse (while jusqu'à traiter tous les fichiers)
+   
+   while (nb_fichiers_traites < nb_fichiers_total) {
+       // Ouvrir le fichier courant
+       
+       // Envoyer le fichier à l'IA via API HTTP
+       // Utiliser libcurl pour faire des requêtes HTTP à l'API ChatGPT
+       
+       // Demander à l'IA d'extraire:
+       //   - Type de document (CNI/Habilitation/FDS/Aptitude)
+       //   - Nom, Prénom de la personne
+       //   - Entreprise
+       //   - Date de validité ou d'émission
+       
+       // Parser la réponse JSON de l'IA (avec cJSON ou similaire)
+       
+       // Valider selon les règles métier (fonctions de validation)
+       //   - CNI: calculer si date < 10 ou 15 ans
+       //   - Habilitation: date < 3 ans
+       //   - FDS: année >= 2021
+       //   - Aptitude Frigo: toujours valide
+       
+       // Écrire dans fichier CSV (fopen, fprintf)
+       //   Format: Entreprise,Nom,Prenom,Type,Fichier,DateValidite,Statut,Commentaire
+       
+       // Fermer le fichier proprement
+       // Incrémenter compteur
+   }
+
+3. Après la boucle
+   - Fermer le fichier CSV
+   - Afficher statistiques à l'écran (printf)
+   - Sauvegarder dans dossier output/
+
+SORTIE :
+- Fichier CSV : rapport_pdp_YYYYMMDD.csv
+- Log en console
+
+================================================================================
+Architecture Modulaire (fichiers .c et .h) :
+================================================================================
+
+Fichiers requis :
+- main.c : fonction main(), orchestration générale
+- file_scanner.c / .h : scanner de dossier, comptage fichiers
+- ai_client.c / .h : communication avec l'API ChatGPT (libcurl)
+- json_parser.c / .h : parser les réponses JSON de l'IA
+- validator.c / .h : règles de validation métier
+- csv_writer.c / .h : écriture du rapport CSV
+- config.h : constantes (chemins, règles de validité)
+- makefile : compilation avec gcc
+
+Structures de données suggérées :
+
+typedef struct {
+    char entreprise[100];
+    char nom[50];
+    char prenom[50];
+    char type_document[30];
+    char chemin_fichier[256];
+    char date_validite[20];
+    char statut[20];  // "CONFORME" ou "NON_CONFORME"
+    char commentaire[200];
+} Document;
+
+================================================================================
+Contraintes Techniques :
+================================================================================
+
+Langage : C ANSI (gcc)
+Pas d'OCR local : Tout passe par l'IA
+
+Bibliothèques externes autorisées :
+  - libcurl : pour requêtes HTTP vers API ChatGPT
+  - cJSON : pour parser les réponses JSON
+  - Bibliothèques standard C : stdio.h, stdlib.h, string.h, dirent.h, time.h
+
+Modularité : 
+  - Prototypes dans fichiers .h
+  - Implémentations dans fichiers .c
+  - Compilation via makefile
+
+Gestion mémoire :
+  - Allocation dynamique avec malloc() pour liste de fichiers
+  - Libération avec free()
+  - Pas de fuites mémoire
+
+Gestion d'erreurs :
+  - Vérifier tous les fopen(), malloc(), appels API
+  - Continuer le traitement même si un fichier échoue
+  - Logger les erreurs dans le CSV avec statut "ERREUR"
+
+API ChatGPT :
+  - URL : https://api.openai.com/v1/chat/completions (ou chat.st.com)
+  - Authentification : Bearer token dans headers
+  - Envoyer le chemin du fichier + prompt demandant extraction d'infos
+  - Recevoir réponse JSON structurée
+
+Makefile cible :
+
+CC = gcc
+CFLAGS = -Wall -Wextra -std=c99
+LIBS = -lcurl -lcjson
+
+pdp_automation: main.o file_scanner.o ai_client.o validator.o csv_writer.o
+    $(CC) -o $@ $^ $(LIBS)
+
+================================================================================
+Résumé :
+================================================================================
+Un programme C modulaire qui scanne un dossier, envoie chaque document à une IA 
+via API, parse les résultats JSON, valide selon des règles métier, et génère un 
+rapport CSV de conformité.

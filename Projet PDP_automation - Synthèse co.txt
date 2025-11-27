@@ -1,0 +1,108 @@
+Projet PDP_automation - Synthèse complète
+
+1. Objectif global  
+Automatiser la vérification de conformité des documents obligatoires (CNI, habilitations, FDS, aptitudes frigorifiques) pour les entreprises extérieures, via analyse par API ChatGPT ST.
+
+2. Architecture technique complète
+
+Langage : C (ANSI C99)
+Bibliothèques : libcurl (HTTP/HTTPS), cJSON (JSON parsing), stdio, stdlib, string, dirent, time
+API REST : https://chat.st.com, port 443 (HTTPS)
+Authentification : Header Authorization: Bearer <TOKEN_API> + headers spécifiques (nonce, token SHA1)
+Structure projet : Modules séparés pour scanner, communication API, parsing JSON, validation, génération CSV
+Compilation : gcc + makefile
+
+3. Workflow détaillé
+
+Dossier documents -> Scanner fichiers -> Fichier valide ?
+  Oui -> Envoyer fichier à API ChatGPT -> Recevoir réponse JSON -> Parser JSON -> Appliquer règles validation -> Écrire résultat CSV -> Fichiers restants ?
+  Non -> Logger erreur fichier
+Fichiers restants ? Oui -> Scanner fichiers
+Non -> Afficher statistiques -> Fin
+
+4. Modules et responsabilités
+
+- Main (main.c) : Orchestration générale, boucle principale
+- Scanner (document_scanner.c/h) : Lister fichiers, filtrer extensions
+- API Client (chatgpt_client.c/h) : Préparer requêtes HTTPS, authentification, envoi fichiers
+- JSON Parser (json_parser.c/h) : Extraire données pertinentes des réponses JSON
+- Validator (validator.c/h) : Appliquer règles métier (validité dates, conformité)
+- CSV Generator (excel_generator.c/h) : Générer fichier CSV final
+- Config (config.h) : Constantes (URL API, règles, tokens, etc.)
+
+5. Gestion de l’authentification
+
+Pour chaque requête, générer un nonce unique (UUID).
+Calculer le token SHA1 selon la formule :  
+SHA1(clientAppName_service_apiKey_timestamp_nonce)
+Envoyer dans les headers HTTP :  
+- stchatgpt-auth-nonce: <nonce>  
+- stchatgpt-auth-token: <token_calculé>
+
+6. Prompts IA pour extraction (extraits)
+
+- CNI : extraire nom, prénom, dates (naissance, émission, expiration)
+- Habilitations électriques : nom, prénom, entreprise, type, dates émission/expiration
+- FDS : nom produit, entreprise, année édition, date révision
+- Aptitudes frigorifiques : nom, prénom, entreprise, numéro certificat, date obtention
+
+7. Exemple JSON requête pour Chat API
+
+{
+  "model": "gpt-4",
+  "messages": [
+    {
+      "role": "system",
+      "content": "Tu es un assistant d'extraction de données de documents."
+    },
+    {
+      "role": "user",
+      "content": "<PROMPT_SPÉCIFIQUE> + <CONTENU_DOCUMENT_BASE64>"
+    }
+  ],
+  "temperature": 0.2,
+  "max_tokens": 500
+}
+
+8. Gestion des erreurs
+
+- Fichiers introuvables ou corrompus → log dans CSV avec statut "ERREUR"
+- Erreurs réseau → 3 tentatives, puis log erreur
+- JSON malformé → log "ERREUR_PARSING"
+- Mémoire insuffisante → arrêt du programme avec message
+
+9. Format CSV de sortie
+
+En-tête :  
+Entreprise,Nom,Prenom,Type_Document,Chemin_Fichier,Date_Validite,Statut,Commentaire
+
+Exemple :  
+ACME Corp,Dupont,Jean,CNI,data/input/cni_dupont.pdf,2025-12-31,CONFORME,  
+TechnoServ,Martin,Sophie,HABILITATION,data/input/hab_martin.pdf,2023-05-15,NON_CONFORME,Expiré depuis 2 ans
+
+10. Compilation et exécution
+
+Commandes Makefile :  
+- make : compiler  
+- make run ou ./pdp_automation : exécuter  
+- make clean : nettoyer
+
+11. Prochaines étapes recommandées
+
+- Implémenter la génération du token SHA1 et nonce UUID en C.
+- Développer le module chatgpt_client pour gérer la communication sécurisée.
+- Tester l’envoi d’un document et la réception d’une réponse JSON.
+- Implémenter le parsing et la validation métier.
+- Générer le rapport CSV final.
+- Ajouter gestion robuste des erreurs et statistiques.
+
+---
+
+Si vous souhaitez, je peux vous fournir un exemple de code C pour :
+
+- Générer un nonce UUID.
+- Calculer un token SHA1.
+- Construire et envoyer une requête HTTPS avec libcurl.
+- Parser une réponse JSON avec cJSON.
+
+N’hésitez pas à me demander !
